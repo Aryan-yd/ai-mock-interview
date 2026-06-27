@@ -349,9 +349,9 @@ The AI evaluates candidate answers using:
 
 ## 🏠 Dashboard
 
-![Dashboard](assets/dashboard1.png)
-![Dashboard](assets/dashboard2.png)
-![Dashboard](assets/dashboard3.png)
+![Dashboard1](assets/Dashboard1.png)
+![Dashboard2](assets/Dashboard2.png)
+![Dashboard2](assets/Dashboard3.png)
 
 ## 🎯 Interview Setup
 

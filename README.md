@@ -341,23 +341,29 @@ The AI evaluates candidate answers using:
 
 # 📸 Application Screenshots
 
-Add your screenshots inside the `assets/` folder and update these paths.
+
+
+## 🎯 SignUp page
+
+![SignUp](assets/SignUp.png)
 
 ## 🏠 Dashboard
 
-![Dashboard](assets/dashboard.png)
+![Dashboard](assets/dashboard1.png)
+![Dashboard](assets/dashboard2.png)
+![Dashboard](assets/dashboard3.png)
 
 ## 🎯 Interview Setup
 
-![Interview Setup](assets/interview_setup.png)
+![Interview Setup](assets/InterviewStart.png)
 
 ## 🎙️ Interactive Interview
 
-![Interactive Interview](assets/interactive_interview.png)
+![Interactive Interview](assets/Result.png)
 
-## 📄 PDF Report
+## 📄 History
 
-![PDF Report](assets/report.png)
+![PDF Report](assets/History.png)
 
 ---
 
@@ -399,21 +405,6 @@ This project demonstrates practical skills in:
 
 ---
 
-# 📌 Repository Description
-
-```text
-An AI-powered mock interview platform built with Streamlit, Google Gemini, and SQLite that generates personalized interview questions, evaluates answers, tracks progress, and creates professional PDF reports.
-```
-
----
-
-# 🧾 .env.example
-
-```env
-GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
-```
-
----
 
 
 

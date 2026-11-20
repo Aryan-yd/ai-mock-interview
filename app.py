@@ -1,3 +1,4 @@
+import os
 import json
 import pandas as pd
 import plotly.express as px
@@ -6,6 +7,16 @@ import streamlit as st
 from database import init_db, get_user_interviews, get_interview
 from login import auth_page
 from interview import setup_interview_page, interactive_interview_page
+from resume_viewer import render_resume_insights
+from pdf_reader import extract_text_from_pdf
+from gemini import (
+    analyze_resume,
+    set_gemini_api_key,
+    get_gemini_status,
+    set_interview_mode,
+    is_live_mode,
+    test_gemini_connection
+)
 
 
 st.set_page_config(
@@ -92,14 +103,84 @@ if "user" not in st.session_state:
     st.stop()
 
 
+# ---------- SIDEBAR: AI ENGINE & MODE SETTINGS ----------
+with st.sidebar:
+    st.markdown("### ⚙️ Engine & Mode")
+    ai_status = get_gemini_status()
+
+    mode_options = ["🟢 Gemini Live Mode", "⚡ Demo Mode (Offline)"]
+    current_idx = 0 if ai_status["is_live"] else 1
+    selected_option = st.radio(
+        "Active Application Mode",
+        mode_options,
+        index=current_idx,
+        key="app_mode_selector",
+        help="Gemini Live Mode calls Google's API for dynamic questions & evaluations. Demo Mode works offline without an API key."
+    )
+    chosen_mode = "live" if "Live" in selected_option else "demo"
+    if chosen_mode != ai_status["mode"]:
+        set_interview_mode(chosen_mode)
+        st.rerun()
+
+    st.write("---")
+    st.markdown("### 🔑 Gemini API Details")
+
+    if ai_status["has_key"]:
+        st.success(f"**Key Configured:** `{ai_status['masked_key']}`")
+        st.caption(f"🤖 Model: `{ai_status['model']}`")
+
+        if st.button("🧪 Test API Connection", key="btn_test_conn", width="stretch"):
+            with st.spinner("Pinging Google Gemini API..."):
+                ok, msg = test_gemini_connection()
+                if ok:
+                    st.success(msg)
+                else:
+                    st.error(msg)
+
+        with st.expander("Update / Change API Key"):
+            new_k = st.text_input("New Gemini API Key", type="password", key="sidebar_new_key")
+            if st.button("Update Key", key="btn_update_key", width="stretch"):
+                if new_k.strip():
+                    set_gemini_api_key(new_k.strip())
+                    st.success("API Key updated securely in .env!")
+                    st.rerun()
+    else:
+        st.warning("🟡 **API Key:** Not Configured")
+        st.caption("Running in Demo Mode. Enter a Google Gemini API key to activate Gemini Live AI.")
+        new_k = st.text_input("Enter Gemini API Key", type="password", placeholder="AIzaSy... or AQ...", key="sidebar_key_in")
+        if st.button("💾 Save & Activate Live Mode", key="btn_save_key", width="stretch"):
+            if new_k.strip():
+                set_gemini_api_key(new_k.strip())
+                set_interview_mode("live")
+                st.success("API Key saved! Gemini Live Mode activated.")
+                st.rerun()
+            else:
+                st.warning("Please paste a valid key.")
+        st.markdown("[👉 Get Free Gemini API Key](https://aistudio.google.com/app/apikey)")
+
+    if ai_status.get("last_error"):
+        st.caption(f"⚠️ Last status: {ai_status['last_error']}")
+
+
 # ---------- HEADER ----------
+user_display_name = st.session_state.user.get("name", "Candidate") if "user" in st.session_state and st.session_state.user else "Candidate"
+ai_status = get_gemini_status()
+
+if ai_status["is_live"]:
+    mode_badge_html = f"""<span style="background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #86efac; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 700; margin-left: 12px;">🟢 Gemini Live Mode ({ai_status['model']})</span>"""
+else:
+    mode_badge_html = """<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fde68a; padding: 4px 12px; border-radius: 12px; font-size: 13px; font-weight: 700; margin-left: 12px;">⚡ Demo Mode (Offline Simulation)</span>"""
+
 st.markdown(
     f"""
     <div class="card">
         <div class="main-title">🤖 AI Interview Coach</div>
         <div class="sub-title">Practice smarter • Improve faster • Get hired</div>
         <br>
-        <b>👤 Logged in as {st.session_state.user.get("name", "Maham")}</b>
+        <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <b>👤 Logged in as {user_display_name}</b>
+            {mode_badge_html}
+        </div>
     </div>
     """,
     unsafe_allow_html=True
@@ -107,7 +188,7 @@ st.markdown(
 
 st.write("")
 
-nav1, nav2, nav3, nav4, nav5 = st.columns(5)
+nav1, nav2, nav3, nav4, nav5, nav6 = st.columns(6)
 
 with nav1:
     if st.button("🏠 Dashboard", width="stretch"):
@@ -120,16 +201,21 @@ with nav2:
         st.rerun()
 
 with nav3:
-    if st.button("💬 Interactive Interview", width="stretch"):
+    if st.button("🎙️ Mock Interview", width="stretch"):
         st.session_state.page = "Practice"
         st.rerun()
 
 with nav4:
+    if st.button("📄 Resume Insights", width="stretch"):
+        st.session_state.page = "Resume Insights"
+        st.rerun()
+
+with nav5:
     if st.button("📚 History", width="stretch"):
         st.session_state.page = "History"
         st.rerun()
 
-with nav5:
+with nav6:
     if st.button("🚪 Logout", width="stretch"):
         st.session_state.clear()
         st.rerun()
@@ -145,8 +231,8 @@ if st.session_state.page == "Dashboard":
         <div class="hero">
             <h1>Welcome Back 👋</h1>
             <p style="font-size:18px;color:#e0e7ff;">
-                Upload your resume, add a job description, practice interviews,
-                and get AI-powered feedback.
+                Upload your resume, add a job description, practice dynamic adaptive interviews with voice input & live webcam face view,
+                and get AI-powered evaluation reports.
             </p>
         </div>
         """,
@@ -175,8 +261,8 @@ if st.session_state.page == "Dashboard":
             st.rerun()
 
     with b2:
-        if st.button("📄 Upload Resume / JD", width="stretch"):
-            st.session_state.page = "New Interview"
+        if st.button("📄 View Resume Insights", width="stretch"):
+            st.session_state.page = "Resume Insights"
             st.rerun()
 
     st.write("")
@@ -230,34 +316,70 @@ if st.session_state.page == "Dashboard":
         st.markdown(
             """
             <div class="card">
-                <h3>📄 Resume Analyzer</h3>
-                <p>Upload your resume and let AI extract your skills, education, and projects.</p>
+                <h3>📄 Extracted Resume Insights</h3>
+                <p>Inspect extracted skills, education, experience, and executive summaries.</p>
             </div>
             """,
             unsafe_allow_html=True
         )
+        st.write("")
+        if st.button("Explore Resume Insights", key="qa_resume", width="stretch"):
+            st.session_state.page = "Resume Insights"
+            st.rerun()
 
     with q2:
         st.markdown(
             """
             <div class="card">
-                <h3>💼 Job Description</h3>
-                <p>Paste a job description and generate role-specific interview questions.</p>
+                <h3>🎙️ Spoken Mock Interview</h3>
+                <p>Record your spoken answers with microphone input and live voice transcription.</p>
             </div>
             """,
             unsafe_allow_html=True
         )
+        st.write("")
+        if st.button("Launch Mock Interview", key="qa_practice", width="stretch"):
+            st.session_state.page = "Practice"
+            st.rerun()
 
     with q3:
         st.markdown(
             """
             <div class="card">
-                <h3>🤖 AI Feedback</h3>
-                <p>Get score, strengths, weaknesses, improved answer, and tips.</p>
+                <h3>🎯 Dynamic Adaptive Q&A</h3>
+                <p>Experience real-time follow-up questions tailored to your previous responses.</p>
             </div>
             """,
             unsafe_allow_html=True
         )
+        st.write("")
+        if st.button("Configure Adaptive Session", key="qa_adaptive", width="stretch"):
+            st.session_state.page = "New Interview"
+            st.rerun()
+
+
+# ---------- RESUME INSIGHTS PAGE ----------
+elif st.session_state.page == "Resume Insights":
+    st.header("📄 Resume Analyzer & Extracted Profile Insights")
+    st.caption("Upload any resume PDF to inspect the AI-extracted skills, education, projects, and summary.")
+
+    up_resume = st.file_uploader("Upload Resume PDF to Analyze", type=["pdf"], key="page_resume_pdf")
+
+    if up_resume is not None:
+        with st.spinner("Analyzing resume content..."):
+            txt = extract_text_from_pdf(up_resume)
+            info = analyze_resume(txt)
+            st.session_state.cached_resume_info = info
+            st.session_state.cached_resume_text = txt
+            render_resume_insights(info, txt)
+    elif "cached_resume_info" in st.session_state:
+        st.info("Displaying the most recent resume uploaded in your active session:")
+        render_resume_insights(
+            st.session_state.cached_resume_info,
+            st.session_state.get("cached_resume_text", "")
+        )
+    else:
+        st.info("Please upload a resume PDF above to view extracted profile insights.")
 
 
 # ---------- NEW INTERVIEW ----------
@@ -290,7 +412,8 @@ elif st.session_state.page == "History":
                     st.write("### Questions and Answers")
 
                     for i, q in enumerate(item["questions"]):
-                        st.markdown(f"**Q{i+1}: {q.get('question','')}**")
+                        q_display = q.get('question','') if isinstance(q, dict) else str(q)
+                        st.markdown(f"**Q{i+1}: {q_display}**")
 
                         if i < len(item["answers"]):
                             st.write("Answer:", item["answers"][i])

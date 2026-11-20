@@ -8,15 +8,28 @@ from dotenv import load_dotenv
 # Load environment variables from .env
 load_dotenv()
 
-MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
+
+def _get_config(key: str, default: str = "") -> str:
+    """Helper to read configuration from environment, .env, or Streamlit Cloud secrets."""
+    val = os.getenv(key, "").strip()
+    if not val:
+        try:
+            import streamlit as st
+            val = str(st.secrets.get(key, "")).strip()
+        except Exception:
+            pass
+    return val if val else default
+
+
+MODEL_NAME = _get_config("GEMINI_MODEL", "gemini-flash-lite-latest")
 _LAST_API_ERROR = None
 _LAST_MODEL_USED = None
 
 
 def get_interview_mode() -> str:
     """Returns 'live' if configured and API key present, else 'demo'."""
-    mode = os.getenv("INTERVIEW_MODE", "live").lower().strip()
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    mode = _get_config("INTERVIEW_MODE", "live").lower().strip()
+    api_key = _get_config("GEMINI_API_KEY", "").strip()
     if mode == "live" and api_key:
         return "live"
     return "demo"
@@ -83,14 +96,14 @@ def set_gemini_api_key(new_key: str) -> bool:
 
 def get_gemini_status() -> dict:
     """Returns safe diagnostic information without exposing sensitive keys."""
-    key = os.getenv("GEMINI_API_KEY", "").strip()
+    key = _get_config("GEMINI_API_KEY")
     masked = f"{key[:6]}...{key[-4:]}" if len(key) > 10 else ("***" if key else "Not set")
     return {
         "mode": get_interview_mode(),
         "is_live": is_live_mode(),
         "has_key": bool(key),
         "masked_key": masked,
-        "model": os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest"),
+        "model": _get_config("GEMINI_MODEL", "gemini-flash-lite-latest"),
         "last_error": _LAST_API_ERROR,
         "last_model_used": _LAST_MODEL_USED
     }
@@ -102,12 +115,12 @@ def call_gemini_api(prompt: str) -> str:
     Includes automatic multi-model fallback and granular HTTP error handling.
     """
     global _LAST_API_ERROR, _LAST_MODEL_USED
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    api_key = _get_config("GEMINI_API_KEY")
     if not api_key:
         _LAST_API_ERROR = "No Gemini API key found. Using Demo Mode."
         return ""
 
-    preferred_model = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest").strip()
+    preferred_model = _get_config("GEMINI_MODEL", "gemini-flash-lite-latest")
     candidate_models = [
         preferred_model,
         "gemini-flash-lite-latest",
@@ -178,12 +191,12 @@ def call_gemini_api(prompt: str) -> str:
 
 def test_gemini_connection() -> tuple:
     """Diagnostic check to test API connectivity. Returns (success: bool, message: str)."""
-    api_key = os.getenv("GEMINI_API_KEY", "").strip()
+    api_key = _get_config("GEMINI_API_KEY")
     if not api_key:
         return False, "No Gemini API key is configured. Running in Demo Mode."
     resp = call_gemini_api("Respond with only the single word: OK")
     if resp:
-        model = _LAST_MODEL_USED or os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest")
+        model = _LAST_MODEL_USED or _get_config("GEMINI_MODEL", "gemini-flash-lite-latest")
         return True, f"Gemini API Connected successfully via model '{model}'!"
     else:
         err = _LAST_API_ERROR or "Unable to connect to Google Gemini API."

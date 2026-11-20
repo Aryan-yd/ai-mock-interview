@@ -403,24 +403,6 @@ This project demonstrates practical skills in:
 - Authentication Systems
 - Full-stack AI Application Development
 
----
-
-
-
-
-# 👩‍💻 Author
-
-**Maham Zafar**
-
-Software Engineering Graduate
-
-**AI Engineer | Generative AI | Machine Learning | Python Developer**
-
-**GitHub:** https://github.com/Maham-zafar123
-
-**LinkedIn:** https://linkedin.com/in/maham-zafar-84695726b/
-
----
 
 # ⭐ Support
 

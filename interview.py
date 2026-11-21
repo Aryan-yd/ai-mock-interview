@@ -107,13 +107,13 @@ def setup_interview_page():
             resume_info = st.session_state.get("cached_resume_info") or (analyze_resume(resume_text) if resume_text else {})
 
             if adaptive_mode:
-                # In adaptive mode: start with an opening question batch of 1-2 questions, then dynamically branch!
-                opening_questions = generate_questions(resume_text, final_jd, role, total_questions=2)
+                # In adaptive mode: start with the first role-targeted question, then dynamically branch!
+                opening_questions = generate_questions(resume_text, final_jd, role, total_questions=total_questions)
                 initial_questions = opening_questions[:1] if opening_questions else [
                     {
-                        "type": "HR / Opening",
-                        "question": f"Welcome! Could you introduce yourself and explain what makes you a strong fit for the {role} position?",
-                        "ideal_points": ["Clear introduction", "Relevant technical skills", "Alignment with role"]
+                        "type": f"Technical Competency ({role})",
+                        "question": f"Welcome! What core technical tools, analytical frameworks, and methodologies do you rely on most as a {role}?",
+                        "ideal_points": ["Core technical tools", "Structured methodology", f"Relevance to {role}"]
                     }
                 ]
             else:

@@ -247,6 +247,33 @@ def safe_ai_json(prompt: str, fallback: dict) -> dict:
 # =====================================================================
 
 DEMO_QUESTION_BANKS = {
+    "data_analyst": [
+        {
+            "type": "Technical / SQL & Query Optimization",
+            "question": "In SQL, how do window functions such as ROW_NUMBER(), DENSE_RANK(), and LAG() differ from standard GROUP BY aggregations, and in what business analysis scenario would you use them?",
+            "ideal_points": ["Row-level calculation without collapsing groups", "DENSE_RANK vs ROW_NUMBER ranking logic", "LAG/LEAD for period-over-period growth or retention"]
+        },
+        {
+            "type": "Technical / Data Cleaning & EDA",
+            "question": "When exploring a raw transactional dataset with missing values, skewed distributions, and anomalies, what is your systematic Exploratory Data Analysis (EDA) and data cleansing strategy before sharing insights?",
+            "ideal_points": ["Distribution profiling & skewness checks", "Missing data handling (median vs mean imputation)", "Outlier identification via IQR / Boxplots"]
+        },
+        {
+            "type": "Business Intelligence & KPIs",
+            "question": "How do you design an executive-level Power BI or Tableau dashboard to track core business KPIs (such as Churn Rate, Customer Lifetime Value, and Conversion Rate) while avoiding visual clutter?",
+            "ideal_points": ["Top-level KPI scorecards", "Interactive filtering and drill-down paths", "Translating raw data into actionable decision-making"]
+        },
+        {
+            "type": "Statistics & A/B Testing",
+            "question": "Suppose marketing runs an A/B test on a new pricing page and reports a 3.5% lift in conversion. How do you verify whether this result is statistically significant rather than random variance?",
+            "ideal_points": ["Null vs Alternative Hypothesis", "p-value threshold (alpha = 0.05)", "Sample size adequacy and statistical power"]
+        },
+        {
+            "type": "Behavioral / Stakeholder Storytelling",
+            "question": "Describe a scenario where your analytical findings contradicted a senior leader's intuition or hypothesis. How did you communicate and present your data to persuade them?",
+            "ideal_points": ["Visual storytelling with clear charts", "Highlighting confidence levels & sensitivity", "Collaborative, solution-oriented delivery"]
+        }
+    ],
     "software": [
         {
             "type": "HR / Opening",
@@ -334,7 +361,9 @@ DEMO_QUESTION_BANKS = {
 def get_demo_questions(role: str, total_questions: int = 5) -> list:
     """Returns curated demo questions tailored to role category."""
     role_lower = (role or "").lower()
-    if any(k in role_lower for k in ["data", "ai", "ml", "machine learning", "nlp", "vision", "deep learning"]):
+    if any(k in role_lower for k in ["analyst", "analytics", "bi", "business intelligence", "reporting", "data analyst", "financial analyst"]):
+        bank = DEMO_QUESTION_BANKS["data_analyst"]
+    elif any(k in role_lower for k in ["data science", "data scientist", "machine learning", "ml", "nlp", "vision", "deep learning", "ai engineer"]):
         bank = DEMO_QUESTION_BANKS["data_ai"]
     elif any(k in role_lower for k in ["dev", "engineer", "software", "python", "backend", "frontend", "fullstack", "cloud"]):
         bank = DEMO_QUESTION_BANKS["software"]
@@ -488,32 +517,41 @@ def generate_questions(resume_text: str, job_description: str, role: str, total_
         return get_demo_questions(role, total_questions)
 
     prompt = f"""
-You are an expert technical and HR interview coach.
-Generate {total_questions} tailored interview questions for this target role:
-{role}
+You are a senior hiring manager and expert technical interviewer conducting an interview specifically for the role of: {role}.
 
-Incorporate the candidate's resume and job description:
-- HR / Background opening
-- Core Technical questions
-- Behavioral / Scenario-based questions
-- Architecture / Problem-solving questions
+PRIMARY MANDATE - ROLE-SPECIFIC TECHNICAL FOCUS:
+The interview questions MUST rigorously test the core competencies, technical tools, industry workflows, and analytical reasoning required for a professional '{role}'.
+- For example, if the role is 'Data Analyst', you MUST ask in-depth questions testing:
+  1. SQL complex queries (Window functions like ROW_NUMBER/RANK, JOINs, CTEs, Aggregations).
+  2. Data Cleaning & Exploratory Data Analysis (handling nulls, outliers, pandas/Excel data manipulation).
+  3. Business KPIs & Dashboarding (Tableau/PowerBI, Churn, LTV, conversion rates).
+  4. Statistical analysis & A/B testing interpretation.
+- If the role is 'Software Engineer' / 'Python Developer', test system architecture, concurrency, APIs, and data structures.
+- IMPORTANT: Do NOT make every question about the candidate's past resume project! Use the candidate's resume only as supporting background, but prioritize evaluating whether they have the technical skills, tools, and real-world problem-solving needed for the target job role of '{role}'.
+
+Generate {total_questions} structured questions:
+- Question 1: Role Alignment & Core Domain Knowledge in {role}
+- Question 2: Deep Technical & Tool Competency for {role} (e.g. SQL queries, data modeling, algorithms)
+- Question 3: Real-world Scenario / Troubleshooting Challenge in {role}
+- Remaining questions: Business impact, KPIs, and stakeholder communication for {role}
 
 Return ONLY valid JSON in this exact format:
 {{
   "questions": [
     {{
-      "type": "Technical",
-      "question": "question text here",
+      "type": "Technical ({role})",
+      "question": "question text directly testing {role} skills",
       "ideal_points": ["point 1", "point 2", "point 3"]
     }}
   ]
 }}
 
-Resume Context:
-{resume_text[:8000]}
-
+Target Job Role: {role}
 Job Description Context:
-{job_description[:8000]}
+{job_description[:6000] if job_description else f"Industry standard requirements and responsibilities for a professional {role}."}
+
+Candidate Resume Context:
+{resume_text[:6000] if resume_text else "No resume provided. Evaluate standard core competencies for " + role}
 """
     fallback_questions = get_demo_questions(role, total_questions)
     data = safe_ai_json(prompt, {"questions": fallback_questions})
@@ -522,7 +560,7 @@ Job Description Context:
 
 
 def generate_adaptive_question(role: str, resume_text: str, job_description: str, previous_question: dict, previous_answer: str, previous_feedback: dict, question_index: int, total_questions: int) -> dict:
-    """Generates dynamic branching follow-up questions tailored to previous performance."""
+    """Generates dynamic branching follow-up questions tailored to previous performance and target role."""
     if not is_live_mode():
         return get_demo_adaptive_question(role, previous_question, previous_answer, previous_feedback, question_index, total_questions)
 
@@ -530,12 +568,12 @@ def generate_adaptive_question(role: str, resume_text: str, job_description: str
     score = previous_feedback.get("score", 5) if isinstance(previous_feedback, dict) else 5
 
     prompt = f"""
-You are an expert interviewer conducting an adaptive interview for the role of: {role}.
+You are an expert technical interviewer conducting an adaptive interview for the TARGET ROLE: {role}.
 
-The candidate was previously asked (Question {question_index} of {total_questions}):
+Previous Question ({question_index} of {total_questions}):
 "{prev_q_text}"
 
-The candidate responded:
+Candidate Answer:
 "{previous_answer}"
 
 Evaluation of previous response:
@@ -543,24 +581,22 @@ Score: {score}/10
 Strengths: {previous_feedback.get('strengths', [])}
 Weaknesses: {previous_feedback.get('weaknesses', [])}
 
-Job Description Context:
-{job_description[:3000]}
+CRITICAL ROLE-SPECIFIC ADAPTIVE RULES ({question_index + 1} of {total_questions}):
+1. The next question MUST specifically evaluate technical competencies, tools, and real-world problem solving for the TARGET ROLE of '{role}'.
+2. DO NOT get stuck in a loop talking exclusively about the candidate's old resume project! If the previous question touched on a project, actively transition into a core technical skill required for a {role} (e.g., if Data Analyst, test SQL window functions, metric anomaly detection, dashboard KPIs, or statistical A/B testing).
+3. If the candidate scored well (>= 7/10), give them a rigorous advanced problem-solving scenario or complex trade-off in {role}.
+4. If the candidate scored < 7/10, ask a clear, practical foundational question testing another vital tool/concept in {role} to give them a fair second chance.
 
-Resume Context:
-{resume_text[:3000]}
-
-Generate the NEXT adaptive follow-up interview question ({question_index + 1} of {total_questions}).
-Rules:
-1. If score >= 7, challenge with deeper technical drill-down, edge-cases, scalability, or architecture trade-offs.
-2. If score < 7, ask a targeted clarifying question with practical real-world scenario to give them an opportunity to elaborate.
-3. Return ONLY valid JSON:
+Return ONLY valid JSON:
 {{
-  "type": "Technical (Adaptive Follow-up)",
-  "question": "The question text",
+  "type": "Technical ({role})",
+  "question": "The question text directly evaluating {role}",
   "ideal_points": ["point 1", "point 2"],
-  "adaptive_reason": "Why this was generated based on candidate's previous response"
+  "adaptive_reason": "Why this tests {role} based on candidate's prior response"
 }}
 """
+    fallback_q = get_demo_adaptive_question(role, previous_question, previous_answer, previous_feedback, question_index, total_questions)
+    return safe_ai_json(prompt, fallback_q)
     fallback_q = get_demo_adaptive_question(role, previous_question, previous_answer, previous_feedback, question_index, total_questions)
     return safe_ai_json(prompt, fallback_q)
 

@@ -1,0 +1,4 @@
+Evaluate this interview answer:
+Question: {question}
+Answer: {answer}
+Give a score out of 10 and tell them how they did.

@@ -1,0 +1,17 @@
+=== PROMPT 5: SESSION PERFORMANCE SYNTHESIS ===
+Step: Post-interview feedback consolidation
+Model: gemini-flash-lite-latest (Temp: 0.3)
+System Prompt:
+You are an executive hiring bar raiser. Synthesize all scored questions and responses into an overarching candidate hiring readiness assessment.
+User Template:
+Target Role: {role}
+Session Scores: {session_scores}
+Questions & Evaluations: {evaluations_summary}
+
+Return valid JSON:
+{
+  "hiring_readiness": "Ready / Needs Practice / Developing",
+  "composite_score": 7.8,
+  "executive_summary": "...",
+  "top_recommendations": ["...", "..."]
+}

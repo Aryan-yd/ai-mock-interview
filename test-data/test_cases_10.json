@@ -1,0 +1,82 @@
+[
+  {
+    "test_no": 1,
+    "input": "Role: Data Analyst | Skills: Python, SQL, Tableau",
+    "type": "Normal",
+    "expected": "5 questions (at least 3 on SQL/analytics)",
+    "actual": "5 questions: 3 SQL/EDA, 1 KPI, 1 Behavioral",
+    "result": "Pass"
+  },
+  {
+    "test_no": 2,
+    "input": "Role: Software Engineer | Skills: Java, DSA, Spring",
+    "type": "Normal",
+    "expected": "5 questions on DSA, system architecture, OOP",
+    "actual": "5 questions: HashMaps, Concurrency, Microservices",
+    "result": "Pass"
+  },
+  {
+    "test_no": 3,
+    "input": "Role: Data & AI | Skills: PyTorch, NLP, Transformers",
+    "type": "Normal",
+    "expected": "5 questions on ML pipeline, attention mechanism, metrics",
+    "actual": "5 questions: Self-attention, Overfitting, Precision-Recall",
+    "result": "Pass"
+  },
+  {
+    "test_no": 4,
+    "input": "Candidate answer: Detailed CTE and window function explanation (Score: 8.5)",
+    "type": "Normal",
+    "expected": "Dynamic technical drill-down on query optimization",
+    "actual": "Adaptive prompt asked about execution plans and index usage",
+    "result": "Pass"
+  },
+  {
+    "test_no": 5,
+    "input": "Audio Voice input via microphone (FLAC 64-bit speech input)",
+    "type": "Normal",
+    "expected": "Accurate transcription to text box in <= 2s",
+    "actual": "Voice correctly converted to text in answer field",
+    "result": "Pass"
+  },
+  {
+    "test_no": 6,
+    "input": "Gemini API disconnect simulation (Offline toggle active)",
+    "type": "Normal",
+    "expected": "Fallback to curated offline role question bank",
+    "actual": "Loaded offline Data Analyst SQL questions seamlessly",
+    "result": "Pass"
+  },
+  {
+    "test_no": 7,
+    "input": "Answer typed in colloquial Hinglish ('Maine SQL query likha par partition thoda slow tha')",
+    "type": "Edge",
+    "expected": "Model interprets technical intent and responds in English",
+    "actual": "Model understood intent, evaluated Partition By, gave English feedback",
+    "result": "Pass"
+  },
+  {
+    "test_no": 8,
+    "input": "Minimal single-line resume ('B.Tech CSE student looking for data analyst internship')",
+    "type": "Edge",
+    "expected": "Fall back to standard role competencies without crashing",
+    "actual": "Generated fundamental SQL/Excel questions successfully",
+    "result": "Pass"
+  },
+  {
+    "test_no": 9,
+    "input": "Answer: 'idk' (one word, zero effort response)",
+    "type": "Invalid",
+    "expected": "Score <= 2/10 across all metrics, constructive model answer",
+    "actual": "Score 1.0/10, flagged severe lack of depth, provided model answer",
+    "result": "Pass"
+  },
+  {
+    "test_no": 10,
+    "input": "Empty whitespace string '   ' submitted as answer",
+    "type": "Invalid",
+    "expected": "UI validation warning preventing submission",
+    "actual": "Displayed 'Please enter or record an answer before submitting'",
+    "result": "Pass"
+  }
+]

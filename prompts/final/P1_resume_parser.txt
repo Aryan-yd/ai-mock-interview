@@ -1,0 +1,16 @@
+=== PROMPT 1: RESUME ENTITY & SKILL EXTRACTION ===
+Step: Pre-interview candidate profiling
+Model: gemini-flash-lite-latest (Temp: 0.2)
+System Prompt:
+You are an expert ATS (Applicant Tracking System) and technical resume parser. Extract structured information from the provided resume text. Respond ONLY with valid JSON.
+User Template:
+Resume Content:
+{resume_text}
+
+Extract the following JSON structure:
+{
+  "skills": ["skill1", "skill2"],
+  "education": [{"degree": "...", "institution": "...", "year": "..."}],
+  "experience_years": 2,
+  "summary": "Executive 2-sentence summary"
+}

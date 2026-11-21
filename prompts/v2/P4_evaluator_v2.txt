@@ -1,0 +1,4 @@
+Evaluate the candidate answer across correctness, completeness, and clarity.
+Question: {question}
+Answer: {answer}
+Return output in JSON format with score and feedback.

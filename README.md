@@ -15,6 +15,15 @@
 
 ---
 
+### 🔗 Project Deliverables & Links
+- **🚀 Live Prototype:** [https://ai-mock-interview-aryan.streamlit.app](https://ai-mock-interview-aryan.streamlit.app)
+- **🎬 Demo Reel Video:** [YouTube Video (144 seconds)](https://www.youtube.com/watch?v=CfZJnrH0RxE)
+- **📂 GitHub Repository:** [https://github.com/Aryan-yd/ai-mock-interview](https://github.com/Aryan-yd/ai-mock-interview)
+- **📑 Milestone 2 Submission PDF:** [`docs/M2_PE-B81-22_AIInterviewCoach.pdf`](docs/M2_PE-B81-22_AIInterviewCoach.pdf)
+- **📄 Supporting Technical Report:** [`reports/Technocrats_TechnicalReport.pdf`](reports/Technocrats_TechnicalReport.pdf)
+
+---
+
 # 📖 Overview
 
 **AI Interview Coach** is an intelligent interview preparation platform designed to help candidates practice interviews using **Generative AI**.
